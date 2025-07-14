@@ -1,24 +1,41 @@
 {
-	"background": {
-		"scripts": [ "background.js" ]
-	},
-	"default_locale": "en",
-	"description": "__MSG_description__",
-	"content_scripts": [{
-			"js": ["script.js"],
-			"matches": ["*://music.163.com/*"],
-			"run_at": "document_start"
-	}],
-	"web_accessible_resources": ["inject.js"],
-	"icons": {
-		"16": "images/logo16.png",
-		"48": "images/logo48.png",
-		"128": "images/logo128.png"
-	},
-	"browser_action": {},
-	"manifest_version": 2,
-	"permissions": ["*://music.163.com/", "*://*.music.126.net/", "storage", "webRequest", "webRequestBlocking"],
-	"name": "__MSG_name__",
-	"author": "nondanee",
-	"version": "0.0.5"
+  "manifest_version": 3,
+  "name": "__MSG_name__",
+  "version": "0.0.6",
+  "description": "__MSG_description__",
+  "default_locale": "en",
+  "author": "nondanee",
+  "permissions": ["storage", "declarativeNetRequest"],
+  "host_permissions": ["*://music.163.com/*", "*://*.music.126.net/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "js": ["script.js"],
+      "matches": ["*://music.163.com/*"],
+      "run_at": "document_start"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["inject.js"],
+      "matches": ["*://music.163.com/*"]
+    }
+  ],
+  "action": {},
+  "icons": {
+    "16": "images/logo16.png",
+    "48": "images/logo48.png",
+    "128": "images/logo128.png"
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  }
 }

@@ -1,39 +1,78 @@
-let mode
-const title = ['closed', 'normal', 'enhanced']
-const icon = ['images/grey.svg', 'images/red.svg', 'images/blue.svg']
+let mode;
+const title = ["closed", "normal", "enhanced"];
+const icon = ["images/grey.svg", "images/red.svg", "images/blue.svg"];
 
-chrome.webRequest.onBeforeSendHeaders.addListener(
-	details => {
-		const { url, requestHeaders } = details
-		if (url.includes('music.163.com')) {
-			if (mode > 0) requestHeaders.push({
-				name: 'X-Real-IP',
-				value: '211.161.244.70'
-			})
-		} else if (url.includes('music.126.net')) {
-			if (/m\d+c/.test(url)) requestHeaders.push({
-				name: 'Cache-Control',
-				value: 'no-cache'
-			})
-		}
-		return { requestHeaders }
-	},
-	{ urls: ['*://music.163.com/*', '*://*.music.126.net/*'] },
-	['blocking', 'requestHeaders']
-)
+// Function to update declarative net request rules based on mode
+const updateRules = async () => {
+  // Remove existing rules
+  await chrome.declarativeNetRequest.updateSessionRules({
+    removeRuleIds: [1, 2],
+  });
 
-const sync = () => {
-	chrome.storage.local.set({ mode })
-	chrome.browserAction.setIcon({ path: icon[mode] })
-	chrome.browserAction.setTitle({ title: `${chrome.i18n.getMessage('name')} [${chrome.i18n.getMessage(title[mode])}]` })
-}
+  // Add rules based on mode
+  if (mode > 0) {
+    await chrome.declarativeNetRequest.updateSessionRules({
+      addRules: [
+        {
+          id: 1,
+          priority: 1,
+          action: {
+            type: "modifyHeaders",
+            requestHeaders: [
+              {
+                header: "X-Real-IP",
+                operation: "set",
+                value: "211.161.244.70",
+              },
+            ],
+          },
+          condition: {
+            urlFilter: "*://music.163.com/*",
+            resourceTypes: ["xmlhttprequest"],
+          },
+        },
+        {
+          id: 2,
+          priority: 1,
+          action: {
+            type: "modifyHeaders",
+            requestHeaders: [
+              {
+                header: "Cache-Control",
+                operation: "set",
+                value: "no-cache",
+              },
+            ],
+          },
+          condition: {
+            urlFilter: "*://*.music.126.net/*m*c*",
+            resourceTypes: ["xmlhttprequest"],
+          },
+        },
+      ],
+    });
+  }
+};
 
-chrome.browserAction.onClicked.addListener(() => {
-	mode = (mode + 1) % 3
-	sync()
-})
+const sync = async () => {
+  await chrome.storage.local.set({ mode });
+  await chrome.action.setIcon({ path: icon[mode] });
+  await chrome.action.setTitle({
+    title: `${chrome.i18n.getMessage("name")} [${chrome.i18n.getMessage(
+      title[mode]
+    )}]`,
+  });
+  await updateRules();
+};
 
-chrome.storage.local.get('mode', data => {
-	mode = data.mode == null ? 2 : data.mode
-	sync()
-})
+// Handle action button click
+chrome.action.onClicked.addListener(async () => {
+  mode = (mode + 1) % 3;
+  await sync();
+});
+
+// Initialize on startup
+chrome.storage.local.get("mode", async (data) => {
+  mode = data.mode == null ? 2 : data.mode;
+  await sync();
+});
